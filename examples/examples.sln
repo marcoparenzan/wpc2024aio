@@ -1,0 +1,91 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventGridMQTTClient", "EventGridMQTTClient\EventGridMQTTClient.csproj", "{D8822B4A-1A81-4EC2-90E0-CF95F897E302}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IoTHubMQTTClient", "IoTHubMQTTClient\IoTHubMQTTClient.csproj", "{5561C1DA-CF7F-4EB7-8B42-EB12A34991D1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KustoClient", "KustoClient\KustoClient.csproj", "{74609D8E-EACC-4480-8705-7DD90D31ADD3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneLakeWriter", "OneLakeWriter\OneLakeWriter.csproj", "{C6F69EA3-240C-4BB4-B7E8-A71592284F16}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Parquet", "Parquet\Parquet.csproj", "{A71E598E-6A22-4A02-A179-93CB48394058}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReadFabricSqlEndpoint", "ReadFabricSqlEndpoint\ReadFabricSqlEndpoint.csproj", "{B478FA8B-D6CC-4B44-B505-AB8B90DF2214}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimulatedIoTHubDevice", "SimulatedIoTHubDevice\SimulatedIoTHubDevice.csproj", "{E4762613-28BC-49F4-A2C2-197EC542A4FE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SynapseClient", "SynapseClient\SynapseClient.csproj", "{FAB3F4DC-8DC9-4A76-B3AB-8D08960DD7E0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WarehouseEventHandling", "WarehouseEventHandling\WarehouseEventHandling.csproj", "{928A0AF9-BD45-4C88-943C-DC67DE75D1DD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AzureIoTOperations", "AzureIoTOperations", "{827495F2-DE2D-4A60-92C8-B5E009AC3FC5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Models", "AzureIoTOperations\Models\Models.csproj", "{5398C9D1-9D76-4BFE-8C49-D12C82160C23}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WriteMQBroker", "AzureIoTOperations\WriteMQBroker\WriteMQBroker.csproj", "{8FEB5E3F-2052-4F3C-BED9-DFDD00DA166A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D8822B4A-1A81-4EC2-90E0-CF95F897E302}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8822B4A-1A81-4EC2-90E0-CF95F897E302}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8822B4A-1A81-4EC2-90E0-CF95F897E302}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8822B4A-1A81-4EC2-90E0-CF95F897E302}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5561C1DA-CF7F-4EB7-8B42-EB12A34991D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5561C1DA-CF7F-4EB7-8B42-EB12A34991D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5561C1DA-CF7F-4EB7-8B42-EB12A34991D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5561C1DA-CF7F-4EB7-8B42-EB12A34991D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74609D8E-EACC-4480-8705-7DD90D31ADD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74609D8E-EACC-4480-8705-7DD90D31ADD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74609D8E-EACC-4480-8705-7DD90D31ADD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74609D8E-EACC-4480-8705-7DD90D31ADD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6F69EA3-240C-4BB4-B7E8-A71592284F16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6F69EA3-240C-4BB4-B7E8-A71592284F16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6F69EA3-240C-4BB4-B7E8-A71592284F16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6F69EA3-240C-4BB4-B7E8-A71592284F16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A71E598E-6A22-4A02-A179-93CB48394058}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A71E598E-6A22-4A02-A179-93CB48394058}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A71E598E-6A22-4A02-A179-93CB48394058}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A71E598E-6A22-4A02-A179-93CB48394058}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B478FA8B-D6CC-4B44-B505-AB8B90DF2214}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B478FA8B-D6CC-4B44-B505-AB8B90DF2214}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B478FA8B-D6CC-4B44-B505-AB8B90DF2214}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B478FA8B-D6CC-4B44-B505-AB8B90DF2214}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4762613-28BC-49F4-A2C2-197EC542A4FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4762613-28BC-49F4-A2C2-197EC542A4FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4762613-28BC-49F4-A2C2-197EC542A4FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4762613-28BC-49F4-A2C2-197EC542A4FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAB3F4DC-8DC9-4A76-B3AB-8D08960DD7E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAB3F4DC-8DC9-4A76-B3AB-8D08960DD7E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAB3F4DC-8DC9-4A76-B3AB-8D08960DD7E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAB3F4DC-8DC9-4A76-B3AB-8D08960DD7E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{928A0AF9-BD45-4C88-943C-DC67DE75D1DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{928A0AF9-BD45-4C88-943C-DC67DE75D1DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{928A0AF9-BD45-4C88-943C-DC67DE75D1DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{928A0AF9-BD45-4C88-943C-DC67DE75D1DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5398C9D1-9D76-4BFE-8C49-D12C82160C23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5398C9D1-9D76-4BFE-8C49-D12C82160C23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5398C9D1-9D76-4BFE-8C49-D12C82160C23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5398C9D1-9D76-4BFE-8C49-D12C82160C23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FEB5E3F-2052-4F3C-BED9-DFDD00DA166A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FEB5E3F-2052-4F3C-BED9-DFDD00DA166A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FEB5E3F-2052-4F3C-BED9-DFDD00DA166A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FEB5E3F-2052-4F3C-BED9-DFDD00DA166A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5398C9D1-9D76-4BFE-8C49-D12C82160C23} = {827495F2-DE2D-4A60-92C8-B5E009AC3FC5}
+		{8FEB5E3F-2052-4F3C-BED9-DFDD00DA166A} = {827495F2-DE2D-4A60-92C8-B5E009AC3FC5}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C58B46F9-BE6D-47E8-B892-F507249F2557}
+	EndGlobalSection
+EndGlobal
