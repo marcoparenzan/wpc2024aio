@@ -1,0 +1,34 @@
+﻿@inherits LayoutComponentBase
+
+<RadzenComponents @rendermode="InteractiveServer" />
+<RadzenLayout>
+    <RadzenHeader>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenSidebarToggle Click="@(() => sidebar1Expanded = !sidebar1Expanded)" />
+            <RadzenImage Path="images/wpc_logo.svg" Style="height: 30px;" AlternateText="WPC Windows Professional Conference logo" />
+            <RadzenLabel Text="HMI App demo" Style="margin-left: 20px;" />
+        </RadzenStack>
+    </RadzenHeader>
+    <RadzenSidebar @bind-Expanded="@sidebar1Expanded">
+        <RadzenPanelMenu>
+            <RadzenPanelMenuItem Text="Home" Icon="dashboard" Path="" Match="NavLinkMatch.All" />
+            <RadzenPanelMenuItem Text="Counter" Icon="123" Path="counter"/>
+            <RadzenPanelMenuItem Text="Weather" Icon="thermostat" Path="weather" />
+        </RadzenPanelMenu>
+        <div class="rz-p-4">
+            &nbsp;
+        </div>
+    </RadzenSidebar>
+    <RadzenBody>
+        <div class="rz-p-4">
+            @Body
+        </div>
+    </RadzenBody>
+    <RadzenFooter>
+        <RadzenText TextStyle="TextStyle.Overline">From Florence and Mordor with love</RadzenText>
+    </RadzenFooter>
+</RadzenLayout>
+
+@code {
+    bool sidebar1Expanded = true;
+}

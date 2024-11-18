@@ -1,0 +1,104 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@inject IHmiService hmiService
+@using System.Globalization
+
+<PageTitle>MQTT</PageTitle>
+
+<RadzenText TextStyle="TextStyle.H3">MQTT Explorer</RadzenText>
+
+<RadzenText TextStyle="TextStyle.Body1">
+See what we receive through MQTT.
+</RadzenText>
+
+<div class="row">
+    <label>Temperature: @Temperature</label>
+    <label>Pressure: @Pressure</label>
+</div>
+
+<RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
+
+    <RadzenRow>
+        <RadzenColumn>
+            <RadzenChart>
+                <RadzenChartTooltipOptions Shared="false" />
+                <RadzenLineSeries Smooth="true" Data="@listTemperature" CategoryProperty="ValueDate" Title="Temperature" LineType="LineType.Dashed" ValueProperty="Value">
+                    <RadzenMarkers Visible="true" MarkerType="MarkerType.Square" />
+                    <RadzenSeriesDataLabels Visible="false" />
+                </RadzenLineSeries>
+                <RadzenCategoryAxis Padding="20" />
+                <RadzenValueAxis Formatter="@FormatValue">
+                    <RadzenGridLines Visible="true" />
+                    <RadzenAxisTitle Text="Value" />
+                </RadzenValueAxis>
+            </RadzenChart>
+        </RadzenColumn>
+        <RadzenColumn>
+            <RadzenChart>
+                <RadzenChartTooltipOptions Shared="false" />
+                <RadzenLineSeries Smooth="true" Data="@listPressure" CategoryProperty="ValueDate" Title="Pressure" ValueProperty="Value">
+                    <RadzenMarkers Visible="true" MarkerType="MarkerType.Circle" />
+                    <RadzenSeriesDataLabels Visible="false" />
+                </RadzenLineSeries>
+                <RadzenCategoryAxis Padding="20" />
+                <RadzenValueAxis Formatter="@FormatValue">
+                    <RadzenGridLines Visible="true" />
+                    <RadzenAxisTitle Text="Value" />
+                </RadzenValueAxis>
+            </RadzenChart>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+
+@code {
+    class DataItem
+    {
+        public string ValueDate { get; set; }
+        public long Value { get; set; }
+    }
+
+    string FormatValue(object value)
+    {
+        return ((double)value).ToString("#,##");
+    }
+
+    List<DataItem> listTemperature = [];
+    List<DataItem> listPressure = [];
+
+    public long Temperature { get; set; }
+    public long Pressure { get; set; }
+    public DateTimeOffset LastUpdateTemperature { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset LastUpdatePressure { get; set; } = DateTimeOffset.UtcNow;
+    private const int IntervalValue = 5;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await hmiService.SubscribeAsync(async (value) =>
+            {
+                switch (value.Name)
+                {
+                    case "Temperature":
+                        Temperature = (long)value.Value;
+                        if (LastUpdateTemperature.AddSeconds(IntervalValue) < DateTimeOffset.UtcNow)
+                        {
+                            listTemperature.Add(new DataItem { ValueDate = DateTime.Now.ToLongTimeString(), Value = Temperature });
+                            LastUpdateTemperature = DateTimeOffset.UtcNow;
+                        }
+                        break;
+                    case "Pressure":
+                        Pressure = (long)value.Value;
+                        if (LastUpdatePressure.AddSeconds(IntervalValue) < DateTimeOffset.UtcNow)
+                        {
+                            listPressure.Add(new DataItem { ValueDate = DateTime.Now.ToLongTimeString(), Value = Pressure });
+                            LastUpdatePressure = DateTimeOffset.UtcNow;
+                        }
+                        break;
+                }
+
+                await InvokeAsync(() => StateHasChanged());
+            });
+        }
+    }
+}

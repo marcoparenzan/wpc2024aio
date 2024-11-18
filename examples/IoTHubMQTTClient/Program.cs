@@ -43,7 +43,6 @@ var mqttClientOptions = new MqttClientOptionsBuilder()
     })
     .WithCleanSession()
     .Build();
-
 await mqttClient.ConnectAsync(mqttClientOptions, CancellationToken.None);
 
 //mqttClient.UseApplicationMessageReceivedHandler(args => {
