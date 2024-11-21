@@ -4,12 +4,12 @@
 <RadzenLayout>
     <RadzenHeader>
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
-            <RadzenSidebarToggle Click="@(() => sidebar1Expanded = !sidebar1Expanded)" />
+            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
             <RadzenImage Path="images/wpc_logo.svg" Style="height: 30px;" AlternateText="WPC Windows Professional Conference logo" />
             <RadzenLabel Text="HMI App demo" Style="margin-left: 20px;" />
         </RadzenStack>
     </RadzenHeader>
-    <RadzenSidebar @bind-Expanded="@sidebar1Expanded">
+    <RadzenSidebar @bind-Expanded="@sidebarExpanded">
         <RadzenPanelMenu>
             <RadzenPanelMenuItem Text="Home" Icon="dashboard" Path="" Match="NavLinkMatch.All" />
             <RadzenPanelMenuItem Text="Counter" Icon="123" Path="counter"/>
@@ -20,9 +20,11 @@
         </div>
     </RadzenSidebar>
     <RadzenBody>
-        <div class="rz-p-4">
+        <ChildContent>
+            <RadzenContentContainer Name="main">
             @Body
-        </div>
+            </RadzenContentContainer>
+        </ChildContent>
     </RadzenBody>
     <RadzenFooter>
         <RadzenText TextStyle="TextStyle.Overline">From Florence and Mordor with love</RadzenText>
@@ -30,5 +32,5 @@
 </RadzenLayout>
 
 @code {
-    bool sidebar1Expanded = true;
+    bool sidebarExpanded = true;
 }

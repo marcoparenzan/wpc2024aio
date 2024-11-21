@@ -7,22 +7,32 @@ using System.Threading;
 using System.Text.Json;
 using Wpc2024HMIApp.Models;
 using MQTTnet.Server;
+using Azure.Storage.Files.DataLake;
+using System.Diagnostics.Eventing.Reader;
+using Parquet.File.Values.Primitives;
 
 namespace Wpc2024HMIApp.Services
 {
     public class WpcBackgroundService : BackgroundService
     {
+        private TimeSpan BufferInterval = new(0, 1, 0);
         private readonly ILogger<WpcBackgroundService> _logger;
         private readonly IHmiService hmiService;
         private readonly MqttOptions _mqttOptions;
         private readonly IotHubOptions _iotHubOptions;
+        private readonly EventGridOptions _eventGridOptions;
         private MqttFactory _mqttFactory = new();
         private IMqttClient _mqttClient;
         private IMqttClient _iotHubClient;
+        private IMqttClient _eventGridClient;
+        private List<Sample> _samplesBuffer = [];
+        private DateTime _lastBufferCleanTime = DateTime.UtcNow;
+        private readonly object _lock = new();
 
         public WpcBackgroundService(ILogger<WpcBackgroundService> logger,
             IOptions<MqttOptions> mqttOptions,
             IOptions<IotHubOptions> iotHubOptions,
+            IOptions<EventGridOptions> eventGridOptions,
             IHmiService hmiService)
         {
             this._logger = logger;
@@ -30,6 +40,8 @@ namespace Wpc2024HMIApp.Services
             _mqttClient = _mqttFactory.CreateMqttClient();
             _iotHubOptions = iotHubOptions.Value;
             _iotHubClient = _mqttFactory.CreateMqttClient();
+            _eventGridOptions = eventGridOptions.Value;
+            _eventGridClient = _mqttFactory.CreateMqttClient();
             this.hmiService = hmiService;
         }
 
@@ -37,7 +49,7 @@ namespace Wpc2024HMIApp.Services
         {
             _logger.LogInformation("Hosted Service running.");
 
-            #region MQTT Explorer
+            #region Our MQTT Explorer - from MQBroker AIO
             var mqttClientOptions = new MqttClientOptionsBuilder()
                 .WithClientId(_mqttOptions.ClientId)
                 .WithTcpServer(_mqttOptions.HostName, _mqttOptions.PortNumber) // Port is optional
@@ -65,6 +77,33 @@ namespace Wpc2024HMIApp.Services
             await _iotHubClient.ConnectAsync(iotHubClientOptions, CancellationToken.None);
             _logger.LogInformation("IoTHub sender running...");
             #endregion
+
+            #region EventGrid
+            /*
+            var eventGridClientOptions = new MqttClientOptionsBuilder()
+                .WithClientId(_eventGridOptions.ClientId)
+                .WithTcpServer(_eventGridOptions.HostName, _eventGridOptions.PortNumber) // Port is optional
+                .WithCredentials($"{_iotHubOptions.HostName}/{_iotHubOptions.ClientId}/api-version=2021-04-12", _iotHubOptions.Password)
+                .WithTlsOptions(new MqttClientTlsOptions
+                {
+                    AllowUntrustedCertificates = true,
+                    UseTls = true,
+                })
+                .WithCleanSession()
+                .Build();
+            await _iotHubClient.ConnectAsync(eventGridClientOptions, CancellationToken.None);
+            _logger.LogInformation("IoTHub sender running...");
+            */
+            #endregion
+
+            #region Task with a periodic timer
+            using PeriodicTimer timer = new(BufferInterval);
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await SendBufferedDataAsync();
+                await timer.WaitForNextTickAsync(cancellationToken);
+            }
+            #endregion
         }
 
         private async Task MQTTClient_ApplicationMessageReceivedAsync(MqttApplicationMessageReceivedEventArgs arg)
@@ -75,24 +114,31 @@ namespace Wpc2024HMIApp.Services
                     var value = JsonSerializer.Deserialize<BoilerStatus>(arg.ApplicationMessage.PayloadSegment);
                     if (value != null)
                     {
-                        await hmiService.AddHmiValueAsync("Boiler1", "Temperature", value.Status.Value.Temperature.Top);
-                        await hmiService.AddHmiValueAsync("Boiler1", "Pressure", value.Status.Value.Pressure);
+                        var temperature = value.Status.Value.Temperature.Top;
+                        var pressure = value.Status.Value.Pressure;
+
+                        await hmiService.AddHmiValueAsync("Boiler1", "Temperature", temperature);
+                        await hmiService.AddHmiValueAsync("Boiler1", "Pressure", pressure);
                         
-                        //await this.SendMessageToIotHub(value.Status.Value.Temperature.Top, value.Status.Value.Pressure);
+                        await this.SendMessageToIotHubAsync(temperature, pressure);
+
+                        //TODO: Send to Event Grid
+
+                        this.DataBuffering(temperature, pressure);
                     }
 
                     break;
             }
         }
 
-        private async Task SendMessageToIotHub(long temperature, long pressure)
+        private async Task SendMessageToIotHubAsync(long temperature, long pressure)
         {
             var now = DateTimeOffset.Now;
 
             var message = new Message
             {
                 Timestamp = now,
-                MessageType = "ua-deltaframe",
+                MessageType = "status",
                 Payload = new Dictionary<string, PayloadItem>
                 {
                     ["State"] = new PayloadItem { SourceTimestamp = now, Value = "running" },
@@ -109,12 +155,37 @@ namespace Wpc2024HMIApp.Services
 
             var applicationMessage = new MqttApplicationMessageBuilder()
                 .WithTopic(devicePublishTopic)
-                .WithPayload(JsonSerializer.Serialize(message))
+                .WithPayload(messageJson)
                 .Build();
 
             var result = await _iotHubClient.PublishAsync(applicationMessage, CancellationToken.None);
 
             Console.WriteLine($"Message was published. {result.IsSuccess} {result.ReasonCode}");
+        }
+
+        private void DataBuffering(long temperature, long pressure)
+        {
+            var sample = new Sample { Temperature = temperature, Pressure = pressure };
+            lock (_lock)
+            {
+                _samplesBuffer.Add(sample);
+            }
+        }
+
+        private async Task SendBufferedDataAsync()
+        {
+            lock (_lock)
+            {
+                //TODO: Create CSV from Sample
+
+
+                //TODO: Send CSV to parquet
+
+
+                // Reset buffer
+                _lastBufferCleanTime = DateTime.UtcNow;
+                _samplesBuffer.Clear();
+            }
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)

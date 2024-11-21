@@ -8,44 +8,54 @@
 <RadzenText TextStyle="TextStyle.H3">MQTT Explorer</RadzenText>
 
 <RadzenText TextStyle="TextStyle.Body1">
-See what we receive through MQTT.
+    See what we are receiving through MQTT.
 </RadzenText>
 
-<div class="row">
-    <label>Temperature: @Temperature</label>
-    <label>Pressure: @Pressure</label>
-</div>
-
 <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
-
     <RadzenRow>
         <RadzenColumn>
-            <RadzenChart>
-                <RadzenChartTooltipOptions Shared="false" />
-                <RadzenLineSeries Smooth="true" Data="@listTemperature" CategoryProperty="ValueDate" Title="Temperature" LineType="LineType.Dashed" ValueProperty="Value">
-                    <RadzenMarkers Visible="true" MarkerType="MarkerType.Square" />
-                    <RadzenSeriesDataLabels Visible="false" />
-                </RadzenLineSeries>
-                <RadzenCategoryAxis Padding="20" />
-                <RadzenValueAxis Formatter="@FormatValue">
-                    <RadzenGridLines Visible="true" />
-                    <RadzenAxisTitle Text="Value" />
-                </RadzenValueAxis>
-            </RadzenChart>
+            <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                <RadzenStack JustifyContent="JustifyContent.SpaceBetween" Style="height: 100%;" >
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" JustifyContent="JustifyContent.SpaceBetween">
+                        <RadzenText TextStyle="TextStyle.H6">Temperature</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" class="rz-color-info rz-m-0">@($"{Temperature}")</RadzenText>
+                    </RadzenStack>
+                    <RadzenChart @ref=TemperatureChart>
+                        <RadzenChartTooltipOptions Shared="false" />
+                        <RadzenLineSeries Smooth="true" Data="@listTemperature" CategoryProperty="ValueDate" Title="Temperature" LineType="LineType.Dashed" ValueProperty="Value">
+                            <RadzenMarkers Visible="true" MarkerType="MarkerType.Square" />
+                            <RadzenSeriesDataLabels Visible="false" />
+                        </RadzenLineSeries>
+                        <RadzenCategoryAxis Padding="20" />
+                        <RadzenValueAxis Formatter="@FormatValue">
+                            <RadzenGridLines Visible="true" />
+                            <RadzenAxisTitle Text="Value" />
+                        </RadzenValueAxis>
+                    </RadzenChart>
+                </RadzenStack>
+            </RadzenCard>
         </RadzenColumn>
         <RadzenColumn>
-            <RadzenChart>
-                <RadzenChartTooltipOptions Shared="false" />
-                <RadzenLineSeries Smooth="true" Data="@listPressure" CategoryProperty="ValueDate" Title="Pressure" ValueProperty="Value">
-                    <RadzenMarkers Visible="true" MarkerType="MarkerType.Circle" />
-                    <RadzenSeriesDataLabels Visible="false" />
-                </RadzenLineSeries>
-                <RadzenCategoryAxis Padding="20" />
-                <RadzenValueAxis Formatter="@FormatValue">
-                    <RadzenGridLines Visible="true" />
-                    <RadzenAxisTitle Text="Value" />
-                </RadzenValueAxis>
-            </RadzenChart>
+            <RadzenCard Variant="Variant.Outlined" Style="height: 100%;">
+                <RadzenStack JustifyContent="JustifyContent.SpaceBetween" Style="height: 100%;" >
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" JustifyContent="JustifyContent.SpaceBetween">
+                        <RadzenText TextStyle="TextStyle.H6">Pressure</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" class="rz-color-success rz-m-0">@($"{Pressure}")</RadzenText>
+                    </RadzenStack>
+                    <RadzenChart @ref=PressureChart>
+                        <RadzenChartTooltipOptions Shared="false" />
+                        <RadzenLineSeries Smooth="true" Data="@listPressure" CategoryProperty="ValueDate" Title="Pressure" ValueProperty="Value">
+                            <RadzenMarkers Visible="true" MarkerType="MarkerType.Circle" />
+                            <RadzenSeriesDataLabels Visible="false" />
+                        </RadzenLineSeries>
+                        <RadzenCategoryAxis Padding="20" />
+                        <RadzenValueAxis Formatter="@FormatValue">
+                            <RadzenGridLines Visible="true" />
+                            <RadzenAxisTitle Text="Value" />
+                        </RadzenValueAxis>
+                    </RadzenChart>
+                </RadzenStack>
+            </RadzenCard>
         </RadzenColumn>
     </RadzenRow>
 </RadzenStack>
@@ -69,7 +79,10 @@ See what we receive through MQTT.
     public long Pressure { get; set; }
     public DateTimeOffset LastUpdateTemperature { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset LastUpdatePressure { get; set; } = DateTimeOffset.UtcNow;
-    private const int IntervalValue = 5;
+    private const int IntervalValue = 3;
+
+    RadzenChart TemperatureChart;
+    RadzenChart PressureChart;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -83,16 +96,25 @@ See what we receive through MQTT.
                         Temperature = (long)value.Value;
                         if (LastUpdateTemperature.AddSeconds(IntervalValue) < DateTimeOffset.UtcNow)
                         {
+                            if (listTemperature.Count > 6)
+                            {
+                                listTemperature.RemoveAt(0);
+                            }
                             listTemperature.Add(new DataItem { ValueDate = DateTime.Now.ToLongTimeString(), Value = Temperature });
                             LastUpdateTemperature = DateTimeOffset.UtcNow;
+                            await InvokeAsync(() => TemperatureChart.Reload());
                         }
                         break;
                     case "Pressure":
                         Pressure = (long)value.Value;
                         if (LastUpdatePressure.AddSeconds(IntervalValue) < DateTimeOffset.UtcNow)
                         {
+                            if (listPressure.Count > 6) {
+                                listPressure.RemoveAt(0);
+                            }
                             listPressure.Add(new DataItem { ValueDate = DateTime.Now.ToLongTimeString(), Value = Pressure });
                             LastUpdatePressure = DateTimeOffset.UtcNow;
+                            await InvokeAsync(() => PressureChart.Reload());
                         }
                         break;
                 }

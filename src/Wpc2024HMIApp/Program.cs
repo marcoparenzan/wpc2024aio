@@ -9,12 +9,15 @@ builder.Configuration.AddJsonFile("appsettings.local.json", optional: true, relo
 
 builder.Services.Configure<MqttOptions>(builder.Configuration.GetSection(key: nameof(MqttOptions)));
 builder.Services.Configure<IotHubOptions>(builder.Configuration.GetSection(key: nameof(IotHubOptions)));
+builder.Services.Configure<EventGridOptions>(builder.Configuration.GetSection(key: nameof(EventGridOptions)));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddRadzenComponents();
+builder.Services.AddRadzenQueryStringThemeService();
+
 builder.Services.AddScoped<Radzen.DialogService>();
 builder.Services.AddScoped<Radzen.NotificationService>();
 builder.Services.AddScoped<Radzen.ThemeService>();
