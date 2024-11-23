@@ -10,12 +10,14 @@ using MQTTnet.Server;
 using Azure.Storage.Files.DataLake;
 using System.Diagnostics.Eventing.Reader;
 using Parquet.File.Values.Primitives;
+using Wpc2024HMIApp.Utilities;
+using System.Collections.Generic;
 
 namespace Wpc2024HMIApp.Services
 {
     public class WpcBackgroundService : BackgroundService
     {
-        private TimeSpan BufferInterval = new(0, 1, 0);
+        private readonly TimeSpan BufferInterval = new(0, 0, 10);
         private readonly ILogger<WpcBackgroundService> _logger;
         private readonly IHmiService hmiService;
         private readonly MqttOptions _mqttOptions;
@@ -28,6 +30,7 @@ namespace Wpc2024HMIApp.Services
         private List<Sample> _samplesBuffer = [];
         private DateTime _lastBufferCleanTime = DateTime.UtcNow;
         private readonly object _lock = new();
+        private string _fileName = GetFileName();
 
         public WpcBackgroundService(ILogger<WpcBackgroundService> logger,
             IOptions<MqttOptions> mqttOptions,
@@ -100,50 +103,57 @@ namespace Wpc2024HMIApp.Services
             using PeriodicTimer timer = new(BufferInterval);
             while (!cancellationToken.IsCancellationRequested)
             {
-                await SendBufferedDataAsync();
                 await timer.WaitForNextTickAsync(cancellationToken);
+                await SendBufferedDataAsync();
             }
             #endregion
+        }
+
+        private static string GetFileName()
+        {
+            return $"wpc2024_{DateTime.UtcNow:yyyyMMddHHmmss}";
         }
 
         private async Task MQTTClient_ApplicationMessageReceivedAsync(MqttApplicationMessageReceivedEventArgs arg)
         {
             switch (arg.ApplicationMessage.Topic)
             {
-                case "azure-iot-operations/data/wpc2024opcuavm2":
+                case "azure-iot-operations/data/wpc2024opcuavm":
                     var value = JsonSerializer.Deserialize<BoilerStatus>(arg.ApplicationMessage.PayloadSegment);
-                    if (value != null)
+                    if (value?.Status != null)
                     {
+                        var sourceTimestamp = value.Status.SourceTimestamp;
                         var temperature = value.Status.Value.Temperature.Top;
                         var pressure = value.Status.Value.Pressure;
 
                         await hmiService.AddHmiValueAsync("Boiler1", "Temperature", temperature);
                         await hmiService.AddHmiValueAsync("Boiler1", "Pressure", pressure);
-                        
-                        await this.SendMessageToIotHubAsync(temperature, pressure);
+
+                        if (_iotHubOptions.SendToIotHub)
+                        {
+                            await this.SendMessageToIotHubAsync(sourceTimestamp, temperature, pressure);
+                        }
 
                         //TODO: Send to Event Grid
 
-                        this.DataBuffering(temperature, pressure);
+                        this.DataBuffering(sourceTimestamp, temperature, pressure);
                     }
 
                     break;
             }
         }
 
-        private async Task SendMessageToIotHubAsync(long temperature, long pressure)
+        private async Task SendMessageToIotHubAsync(DateTimeOffset sourceTimestamp, long temperature, long pressure)
         {
-            var now = DateTimeOffset.Now;
-
             var message = new Message
             {
-                Timestamp = now,
+                Timestamp = sourceTimestamp,
                 MessageType = "status",
                 Payload = new Dictionary<string, PayloadItem>
                 {
-                    ["State"] = new PayloadItem { SourceTimestamp = now, Value = "running" },
-                    ["Temperature"] = new PayloadItem { SourceTimestamp = now, Value = temperature },
-                    ["Pressure"] = new PayloadItem { SourceTimestamp = now, Value = pressure },
+                    ["State"] = new PayloadItem { SourceTimestamp = sourceTimestamp, Value = "running" },
+                    ["Temperature"] = new PayloadItem { SourceTimestamp = sourceTimestamp, Value = temperature },
+                    ["Pressure"] = new PayloadItem { SourceTimestamp = sourceTimestamp, Value = pressure },
                 },
                 DataSetWriterName = $"{_iotHubOptions.ClientId}",
                 SequenceNumber = Random.Shared.Next(0, 100000)
@@ -160,12 +170,12 @@ namespace Wpc2024HMIApp.Services
 
             var result = await _iotHubClient.PublishAsync(applicationMessage, CancellationToken.None);
 
-            Console.WriteLine($"Message was published. {result.IsSuccess} {result.ReasonCode}");
+            Console.WriteLine($"Message was published to IoT Hub. Success: {result.IsSuccess} - ReasonCode: {result.ReasonCode}");
         }
 
-        private void DataBuffering(long temperature, long pressure)
+        private void DataBuffering(DateTimeOffset sourceTimeStamp, long temperature, long pressure)
         {
-            var sample = new Sample { Temperature = temperature, Pressure = pressure };
+            var sample = new Sample {Timestamp = sourceTimeStamp, Temperature = temperature, Pressure = pressure };
             lock (_lock)
             {
                 _samplesBuffer.Add(sample);
@@ -174,18 +184,31 @@ namespace Wpc2024HMIApp.Services
 
         private async Task SendBufferedDataAsync()
         {
+            if(_samplesBuffer.Count == 0)
+            {
+                return;
+            }
+
+            List<Sample> samplesBufferCopy = [];
+            string csvFile = $"{_fileName}.csv";
+            string parquetFile = $"{_fileName}.parquet";
+
             lock (_lock)
             {
-                //TODO: Create CSV from Sample
-
-
-                //TODO: Send CSV to parquet
-
-
                 // Reset buffer
                 _lastBufferCleanTime = DateTime.UtcNow;
+                samplesBufferCopy = [.. _samplesBuffer];
                 _samplesBuffer.Clear();
+                _fileName = GetFileName();
             }
+
+            // Create CSV from Samples
+            await DataSerializer.WriteCsvAsync(_samplesBuffer, csvFile);
+
+            // Create Parquet from Samples
+            await DataSerializer.WriteParquet(_samplesBuffer, parquetFile);
+
+            // Send CSV to Data Lake
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)

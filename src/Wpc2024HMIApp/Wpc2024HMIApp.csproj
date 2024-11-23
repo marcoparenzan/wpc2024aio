@@ -12,7 +12,7 @@
 		<PackageReference Include="MQTTnet" Version="4.3.7.1207" />
 		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
 		<PackageReference Include="Parquet.Net" Version="5.0.2" />
-		<PackageReference Include="Radzen.Blazor" Version="5.6.3" />
+		<PackageReference Include="Radzen.Blazor" Version="5.6.7" />
 	</ItemGroup>
 	
 </Project>
