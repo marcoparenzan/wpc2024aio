@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true);
 
+builder.Services.Configure<GeneralOptions>(builder.Configuration.GetSection(key: nameof(GeneralOptions)));
 builder.Services.Configure<MqttOptions>(builder.Configuration.GetSection(key: nameof(MqttOptions)));
 builder.Services.Configure<IotHubOptions>(builder.Configuration.GetSection(key: nameof(IotHubOptions)));
 builder.Services.Configure<EventGridOptions>(builder.Configuration.GetSection(key: nameof(EventGridOptions)));

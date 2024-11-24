@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-	<ItemGroup>
+  <ItemGroup>
 		<PackageReference Include="Azure.Identity" Version="1.13.1" />
 		<PackageReference Include="Azure.Storage.Files.DataLake" Version="12.21.0" />
 		<PackageReference Include="MQTTnet" Version="4.3.7.1207" />
@@ -14,5 +14,9 @@
 		<PackageReference Include="Parquet.Net" Version="5.0.2" />
 		<PackageReference Include="Radzen.Blazor" Version="5.6.7" />
 	</ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Files\" />
+  </ItemGroup>
 	
 </Project>

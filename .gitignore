@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# Don't push runtime generated files
+[Ff]iles/
+
 # User-specific files
 *.rsuser
 *.suo

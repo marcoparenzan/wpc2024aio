@@ -17,9 +17,10 @@ namespace Wpc2024HMIApp.Services
 {
     public class WpcBackgroundService : BackgroundService
     {
-        private readonly TimeSpan BufferInterval = new(0, 0, 10);
+        private readonly TimeSpan BufferInterval = new(0, 0, 30);
         private readonly ILogger<WpcBackgroundService> _logger;
         private readonly IHmiService hmiService;
+        private readonly GeneralOptions _generalOptions;
         private readonly MqttOptions _mqttOptions;
         private readonly IotHubOptions _iotHubOptions;
         private readonly EventGridOptions _eventGridOptions;
@@ -28,17 +29,18 @@ namespace Wpc2024HMIApp.Services
         private IMqttClient _iotHubClient;
         private IMqttClient _eventGridClient;
         private List<Sample> _samplesBuffer = [];
-        private DateTime _lastBufferCleanTime = DateTime.UtcNow;
         private readonly object _lock = new();
         private string _fileName = GetFileName();
 
         public WpcBackgroundService(ILogger<WpcBackgroundService> logger,
+            IOptions<GeneralOptions> generalOptions,
             IOptions<MqttOptions> mqttOptions,
             IOptions<IotHubOptions> iotHubOptions,
             IOptions<EventGridOptions> eventGridOptions,
             IHmiService hmiService)
         {
             this._logger = logger;
+            _generalOptions = generalOptions.Value;
             _mqttOptions = mqttOptions.Value;
             _mqttClient = _mqttFactory.CreateMqttClient();
             _iotHubOptions = iotHubOptions.Value;
@@ -134,7 +136,10 @@ namespace Wpc2024HMIApp.Services
                             await this.SendMessageToIotHubAsync(sourceTimestamp, temperature, pressure);
                         }
 
-                        //TODO: Send to Event Grid
+                        if (_eventGridOptions.SendToEventGrid)
+                        {
+                            //TODO: Send to Event Grid
+                        }
 
                         this.DataBuffering(sourceTimestamp, temperature, pressure);
                     }
@@ -196,17 +201,16 @@ namespace Wpc2024HMIApp.Services
             lock (_lock)
             {
                 // Reset buffer
-                _lastBufferCleanTime = DateTime.UtcNow;
                 samplesBufferCopy = [.. _samplesBuffer];
                 _samplesBuffer.Clear();
                 _fileName = GetFileName();
             }
 
             // Create CSV from Samples
-            await DataSerializer.WriteCsvAsync(_samplesBuffer, csvFile);
+            await DataSerializer.WriteCsvAsync(samplesBufferCopy, Path.Combine(_generalOptions.FolderName, csvFile));
 
             // Create Parquet from Samples
-            await DataSerializer.WriteParquet(_samplesBuffer, parquetFile);
+            await DataSerializer.WriteParquet(samplesBufferCopy, Path.Combine(_generalOptions.FolderName, parquetFile));
 
             // Send CSV to Data Lake
         }
