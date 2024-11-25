@@ -20,10 +20,12 @@ namespace Wpc2024HMIApp.Services
         private readonly TimeSpan BufferInterval = new(0, 0, 30);
         private readonly ILogger<WpcBackgroundService> _logger;
         private readonly IHmiService hmiService;
+        private readonly IStorageService storageService;
         private readonly GeneralOptions _generalOptions;
         private readonly MqttOptions _mqttOptions;
         private readonly IotHubOptions _iotHubOptions;
         private readonly EventGridOptions _eventGridOptions;
+        private readonly StorageOptions _storageOptions;
         private MqttFactory _mqttFactory = new();
         private IMqttClient _mqttClient;
         private IMqttClient _iotHubClient;
@@ -37,7 +39,9 @@ namespace Wpc2024HMIApp.Services
             IOptions<MqttOptions> mqttOptions,
             IOptions<IotHubOptions> iotHubOptions,
             IOptions<EventGridOptions> eventGridOptions,
-            IHmiService hmiService)
+            IOptions<StorageOptions> storageOptions,
+            IHmiService hmiService,
+            IStorageService storageService)
         {
             this._logger = logger;
             _generalOptions = generalOptions.Value;
@@ -47,7 +51,9 @@ namespace Wpc2024HMIApp.Services
             _iotHubClient = _mqttFactory.CreateMqttClient();
             _eventGridOptions = eventGridOptions.Value;
             _eventGridClient = _mqttFactory.CreateMqttClient();
+            _storageOptions = storageOptions.Value;
             this.hmiService = hmiService;
+            this.storageService = storageService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -207,10 +213,14 @@ namespace Wpc2024HMIApp.Services
             }
 
             // Create CSV from Samples
-            await DataSerializer.WriteCsvAsync(samplesBufferCopy, Path.Combine(_generalOptions.FolderName, csvFile));
+            var csvCompletePath = Path.Combine(_generalOptions.FolderName, csvFile);
+            await DataSerializer.WriteCsvAsync(samplesBufferCopy, csvCompletePath);
+            await storageService.UploadBlobAsync(csvCompletePath, _storageOptions.CsvContainerName, csvFile);
 
             // Create Parquet from Samples
-            await DataSerializer.WriteParquet(samplesBufferCopy, Path.Combine(_generalOptions.FolderName, parquetFile));
+            var parquetCompletePath = Path.Combine(_generalOptions.FolderName, parquetFile);
+            await DataSerializer.WriteParquet(samplesBufferCopy, parquetCompletePath);
+            await storageService.UploadBlobAsync(parquetCompletePath, _storageOptions.ParquetContainerName, parquetFile);
 
             // Send CSV to Data Lake
         }

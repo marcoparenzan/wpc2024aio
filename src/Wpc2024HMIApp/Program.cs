@@ -11,6 +11,7 @@ builder.Services.Configure<GeneralOptions>(builder.Configuration.GetSection(key:
 builder.Services.Configure<MqttOptions>(builder.Configuration.GetSection(key: nameof(MqttOptions)));
 builder.Services.Configure<IotHubOptions>(builder.Configuration.GetSection(key: nameof(IotHubOptions)));
 builder.Services.Configure<EventGridOptions>(builder.Configuration.GetSection(key: nameof(EventGridOptions)));
+builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection(key: nameof(StorageOptions)));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -25,6 +26,7 @@ builder.Services.AddScoped<Radzen.ThemeService>();
 
 builder.Services
     .AddHostedService<WpcBackgroundService>()
+    .AddSingleton<IStorageService, StorageService>()
     .AddSingleton<IHmiService, HmiService>();
 
 var app = builder.Build();
