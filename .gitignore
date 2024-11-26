@@ -5,6 +5,8 @@
 
 # Don't push runtime generated files
 [Ff]iles/
+# Don't push certificates file
+[Cc]ertificates/
 
 # User-specific files
 *.rsuser

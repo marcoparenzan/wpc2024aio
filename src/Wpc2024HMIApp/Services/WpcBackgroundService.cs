@@ -1,17 +1,13 @@
 ﻿
-using MQTTnet.Client;
-using MQTTnet;
-using Wpc2024HMIApp.Options;
 using Microsoft.Extensions.Options;
-using System.Threading;
+using MQTTnet;
+using MQTTnet.Client;
+using MQTTnet.Server;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Wpc2024HMIApp.Models;
-using MQTTnet.Server;
-using Azure.Storage.Files.DataLake;
-using System.Diagnostics.Eventing.Reader;
-using Parquet.File.Values.Primitives;
+using Wpc2024HMIApp.Options;
 using Wpc2024HMIApp.Utilities;
-using System.Collections.Generic;
 
 namespace Wpc2024HMIApp.Services
 {
@@ -64,7 +60,7 @@ namespace Wpc2024HMIApp.Services
             var mqttClientOptions = new MqttClientOptionsBuilder()
                 .WithClientId(_mqttOptions.ClientId)
                 .WithTcpServer(_mqttOptions.HostName, _mqttOptions.PortNumber) // Port is optional
-                //.WithCredentials(_mqttOptions.UserName, _mqttOptions.Password) // No auth for the demo
+                                                                               //.WithCredentials(_mqttOptions.UserName, _mqttOptions.Password) // No auth for the demo
                 .WithCleanSession()
                 .Build();
             _mqttClient.ApplicationMessageReceivedAsync += MQTTClient_ApplicationMessageReceivedAsync;
@@ -90,21 +86,22 @@ namespace Wpc2024HMIApp.Services
             #endregion
 
             #region EventGrid
-            /*
+            string x509_pem = Path.Combine(Directory.GetCurrentDirectory(), @$"Certificates\{_eventGridOptions.ClientName}.pem");
+            string x509_key = Path.Combine(Directory.GetCurrentDirectory(), @$"Certificates\{_eventGridOptions.ClientName}.key");
+            var certificate = new X509Certificate2(X509Certificate2.CreateFromPemFile(x509_pem, x509_key).Export(X509ContentType.Pkcs12));
             var eventGridClientOptions = new MqttClientOptionsBuilder()
                 .WithClientId(_eventGridOptions.ClientId)
                 .WithTcpServer(_eventGridOptions.HostName, _eventGridOptions.PortNumber) // Port is optional
-                .WithCredentials($"{_iotHubOptions.HostName}/{_iotHubOptions.ClientId}/api-version=2021-04-12", _iotHubOptions.Password)
-                .WithTlsOptions(new MqttClientTlsOptions
+                .WithCredentials(_eventGridOptions.ClientName, "")  //use client authentication name in the username
+                .WithTls(new MqttClientOptionsBuilderTlsParameters()
                 {
-                    AllowUntrustedCertificates = true,
                     UseTls = true,
+                    Certificates = new X509Certificate2Collection(certificate)
                 })
                 .WithCleanSession()
                 .Build();
-            await _iotHubClient.ConnectAsync(eventGridClientOptions, CancellationToken.None);
-            _logger.LogInformation("IoTHub sender running...");
-            */
+            await _eventGridClient.ConnectAsync(eventGridClientOptions, CancellationToken.None);
+            _logger.LogInformation("EventGrid sender running...");
             #endregion
 
             #region Task with a periodic timer
@@ -144,7 +141,7 @@ namespace Wpc2024HMIApp.Services
 
                         if (_eventGridOptions.SendToEventGrid)
                         {
-                            //TODO: Send to Event Grid
+                            await this.SendEventGridMessageAsync(sourceTimestamp, temperature, pressure);
                         }
 
                         this.DataBuffering(sourceTimestamp, temperature, pressure);
@@ -152,6 +149,15 @@ namespace Wpc2024HMIApp.Services
 
                     break;
             }
+        }
+
+        private async Task SendEventGridMessageAsync(DateTimeOffset sourceTimestamp, long temperature, long pressure)
+        {
+            var sample = new Sample { Timestamp = sourceTimestamp, Temperature = temperature, Pressure = pressure };
+
+            var result = await _eventGridClient.PublishStringAsync(_eventGridOptions.Topic, JsonSerializer.Serialize<Sample>(sample));
+
+            Console.WriteLine($"Message was published to EventGrid. Success: {result.IsSuccess} - ReasonCode: {result.ReasonCode}");
         }
 
         private async Task SendMessageToIotHubAsync(DateTimeOffset sourceTimestamp, long temperature, long pressure)
@@ -186,7 +192,7 @@ namespace Wpc2024HMIApp.Services
 
         private void DataBuffering(DateTimeOffset sourceTimeStamp, long temperature, long pressure)
         {
-            var sample = new Sample {Timestamp = sourceTimeStamp, Temperature = temperature, Pressure = pressure };
+            var sample = new Sample { Timestamp = sourceTimeStamp, Temperature = temperature, Pressure = pressure };
             lock (_lock)
             {
                 _samplesBuffer.Add(sample);
@@ -195,7 +201,7 @@ namespace Wpc2024HMIApp.Services
 
         private async Task SendBufferedDataAsync()
         {
-            if(_samplesBuffer.Count == 0)
+            if (_samplesBuffer.Count == 0)
             {
                 return;
             }
